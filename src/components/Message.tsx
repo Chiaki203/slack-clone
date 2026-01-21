@@ -10,6 +10,15 @@ type MessageProps = {
 
 const Message = ({message}:MessageProps) => {
   const {user, userRoles} = useContext(UserContext)
+  const looksLikeEmail = (value?: string) => {
+    if (!value) return false
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  }
+  const displayName = (value?: string) => {
+    if (!value) return 'Unknown'
+    if (looksLikeEmail(value)) return value.split('@')[0]
+    return value
+  }
   return (
     <div className='py-1 flex items-center space-x-4'>
       <div className='text-gray-100 w-4'>
@@ -22,7 +31,7 @@ const Message = ({message}:MessageProps) => {
       </div>
       <div>
         <p className='text-blue-700 font-bold'> 
-          {message.author?.username}
+          {displayName(message.author?.username)}
         </p>
         <p className='text-white'>
           {message.message}

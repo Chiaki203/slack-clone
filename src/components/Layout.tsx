@@ -66,9 +66,12 @@ const Layout = (props:LayoutProps) => {
         <hr className='m-2'/>
         <div className='p-2 flex flex-col space-y-2'>
           <div className='flex items-center justify-between'>
-            <span className='text-sm font-bold text-gray-300 truncate mr-2'>
-              {profile?.username ?? user?.email}
-            </span>
+            <div className='min-w-0 mr-2'>
+              <div className='text-sm font-bold text-gray-300 truncate'>
+                {profile?.username ?? 'Anonymous'}
+              </div>
+              {/* <div className='text-xs text-gray-400 truncate'>{user?.email}</div> */}
+            </div>
             <button
               className='text-xs underline opacity-80 hover:opacity-100'
               onClick={editUsername}
