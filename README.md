@@ -5,10 +5,11 @@ A small Slack-like chat app built with Next.js (Pages Router) + Supabase (Auth +
 ## Features
 
 - Email/password signup + login (Supabase Auth)
+- Display name on signup (stored in Auth metadata as `display_name`)
 - Channels + messages stored in Postgres
 - Realtime updates via Supabase Realtime subscriptions
 - Role-based UI controls (`admin`, `moderator`) for deletions
-- Editable display name (`public.users.username`) separate from auth email
+- Editable display name (`public.users.username`) separate from auth email (email is only shown to the current user)
 
 ## Tech stack
 
@@ -91,9 +92,16 @@ returns trigger
 language plpgsql
 security definer
 as $$
+declare
+  display_name text;
 begin
+  display_name := coalesce(
+    nullif(trim(new.raw_user_meta_data->>'display_name'), ''),
+    'user-' || substring(new.id::text, 1, 8)
+  );
+
   insert into public.users (id, username, status)
-  values (new.id, coalesce(new.email, new.id::text), 'ONLINE')
+  values (new.id, display_name, 'ONLINE')
   on conflict (id) do nothing;
   return new;
 end;
@@ -106,6 +114,17 @@ for each row execute procedure public.handle_new_user();
 ```
 
 Important: the messages query uses `author:users(*)`, so `public.messages.user_id` must reference `public.users.id`.
+
+### Migrating existing email-based usernames (optional)
+
+If your existing `public.users.username` values are emails, you can migrate them to non-email display names.
+This does not delete users; it just updates the `username` column.
+
+```sql
+update public.users
+set username = 'user-' || substring(id::text, 1, 8)
+where username like '%@%';
+```
 
 ### RLS policies (minimum)
 
@@ -218,3 +237,4 @@ values ('<USER_UUID>', 'admin'); -- or 'moderator'
 
 - If refresh redirects you to `/channels/1`, it’s because the router param (`id`) isn’t ready on first render and channels load asynchronously; the redirect must wait until both are loaded.
 - If Realtime doesn’t work, confirm you see a WebSocket connection to `.../realtime/v1/websocket` in DevTools → Network → WS, and that replication is enabled for the tables above.
+- If other users appear to have email-like usernames, update the signup trigger to use `raw_user_meta_data.display_name` and/or run the migration query above.
