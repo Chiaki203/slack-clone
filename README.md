@@ -1,4 +1,4 @@
-# my-next-slack6
+# slack-clone
 
 A small Slack-like chat app built with Next.js (Pages Router) + Supabase (Auth + Postgres + Realtime).
 
