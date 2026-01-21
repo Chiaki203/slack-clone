@@ -9,13 +9,10 @@ import UserContext from '../../lib/UserContext';
 
 const ChannelPage = () => {
   const router = useRouter()
-  console.log('channelPage router', router)
   const {user} = useContext(UserContext)
   const messagesEndRef = useRef<HTMLHRElement>(null)
-  // console.log('messagesEndRef', messagesEndRef)
   const {id} = router.query
   const channelId = typeof id === 'string' ? Number(id) : Number.NaN
-  // console.log('router.query', router.query)
   const {messages, channels, channelsLoaded, refreshChannels} = useStore({
     channelId: Number.isFinite(channelId) ? channelId : 0
   })
@@ -40,7 +37,6 @@ const ChannelPage = () => {
     <Layout channels={channels} activeChannelId={channelId} refreshChannels={refreshChannels}>
       <div className='relative h-screen'>
         <div className='Messages h-full pb-16'>
-          {/* <div>{user?.id}</div> */}
           <div className='p-2 overflow-y-auto'>
             {messages.map(message => (
               <Message key={message.id} message={message}/>

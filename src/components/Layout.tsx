@@ -37,7 +37,6 @@ const Layout = (props:LayoutProps) => {
   const newChannel = async() => {
     const slug = prompt('Please enter the channel title')
     if (slug) {
-      console.log('slugify slug', slugify(slug))
       addChannel(slugify(slug), user!.id)
     }
   }
@@ -55,7 +54,6 @@ const Layout = (props:LayoutProps) => {
     <main className='main flex h-screen w-screen overflow-hidden'>
       <nav 
         className='w-64 bg-gray-900 text-gray-100 overflow-scroll'
-        // className='w-64 bg-gray-900 text-gray-100 overflow-scroll flex-none'
         style={{maxWidth: '20%', minWidth: 150, maxHeight: '100vh'}}
         >
         <div className='p-2'>
@@ -67,7 +65,6 @@ const Layout = (props:LayoutProps) => {
         </div>
         <hr className='m-2'/>
         <div className='p-2 flex flex-col space-y-2'>
-          {/* <h6 className='text-xs'>{user?.email}</h6> */}
           <div className='flex items-center justify-between'>
             <span className='text-sm font-bold text-gray-300 truncate mr-2'>
               {profile?.username ?? user?.email}
@@ -111,7 +108,6 @@ const SidebarItem = ({channel, isActiveChannel, user, userRoles, refreshChannels
     <>
       <li className='flex items-center justify-between'>
         <Link
-          // href={`/channels/${channel.id}`}
           href="/channels/[id]"
           as={`/channels/${channel.id}`}
           >

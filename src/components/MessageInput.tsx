@@ -10,7 +10,6 @@ const MessageInput = ({onSubmit}:MessageInputProps) => {
     if (e.code === 'Enter') {
       onSubmit(messageText)
       setMessageText('')
-      console.log('messageText deleted', messageText)
     }
   }
   return (

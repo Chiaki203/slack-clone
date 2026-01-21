@@ -10,7 +10,6 @@ type MessageProps = {
 
 const Message = ({message}:MessageProps) => {
   const {user, userRoles} = useContext(UserContext)
-  // console.log('message page props', message)
   return (
     <div className='py-1 flex items-center space-x-4'>
       <div className='text-gray-100 w-4'>

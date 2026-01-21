@@ -1,13 +1,3 @@
-// import '../styles/globals.css'
-// import type { AppProps } from 'next/app'
-
-// function MyApp({ Component, pageProps }: AppProps) {
-//   return <Component {...pageProps} />
-// }
-
-// export default MyApp
-
-
 import '../styles/styles.scss'
 import type { AppProps } from 'next/app'
 import Router from 'next/router'
@@ -29,7 +19,6 @@ const SupabaseSlackClone = ({Component, pageProps}:AppProps) => {
   const [session, setSession] = useState<AuthSession|null>(null)
   const [profile, setProfile] = useState<DbUser | null>(null)
   const [userRoles, setUserRoles] = useState<('admin'|'moderator')[]>([])
-  // console.log('userRoles', userRoles)
   const refreshProfile = async(userId?: string) => {
     const id = userId ?? user?.id
     if (!id) return
@@ -42,7 +31,6 @@ const SupabaseSlackClone = ({Component, pageProps}:AppProps) => {
       setUserRoles(userRoles?.map(userRole => userRole.role))
     })
     await refreshProfile(id)
-    console.log('await fetchUserRoles しました！')
   }
   const signOut = async() => {
     const result = await supabase.auth.signOut()
@@ -51,11 +39,9 @@ const SupabaseSlackClone = ({Component, pageProps}:AppProps) => {
   }
   useEffect(() => {
     const session = supabase.auth.session()
-    console.log('supabase.auth.session()', session)
     setSession(session)
     const currentUser = session?.user ?? null
     setUser(currentUser)
-    console.log('session user', currentUser)
     setUserLoaded(!!currentUser)
     if (currentUser) {
       void signIn({
@@ -64,19 +50,15 @@ const SupabaseSlackClone = ({Component, pageProps}:AppProps) => {
       })
     }
     const {data:authListener} = supabase.auth.onAuthStateChange(async(event, session) => {
-      console.log('onAuthStateChange event', event)
-      console.log('onAuthStateChange session', session)
       setSession(session)
       const currentUser = session?.user
       setUser(currentUser ?? null)
       setUserLoaded(!!currentUser)
-      console.log('!!currentUser', !!currentUser)
       if (currentUser) {
         await signIn({
           id: currentUser.id,
           email: currentUser.email
         })
-        // Router.push('/channels/[id]', '/channels/1')
       } else {
         setProfile(null)
       }
