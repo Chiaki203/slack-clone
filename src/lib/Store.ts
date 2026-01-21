@@ -14,6 +14,7 @@ type Props = {
 
 export const useStore = ({channelId}:Props) => {
   const [channels, setChannels] = useState<Channel[]>([])
+  const [channelsLoaded, setChannelsLoaded] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [users] = useState(new Map())
   const [newMessage, handleNewMessage] = useState<Message>()
@@ -22,7 +23,7 @@ export const useStore = ({channelId}:Props) => {
   const [deletedChannel, handleDeletedChannel] = useState<Channel>()
   const [deletedMessage, handleDeletedMessage] = useState<Message>()
   useEffect(() => {
-    fetchChannels(setChannels)
+    fetchChannels(setChannels).finally(() => setChannelsLoaded(true))
     const userListener = supabase
       .from('users')
       .on('*', (payload) => {
@@ -97,10 +98,16 @@ export const useStore = ({channelId}:Props) => {
   }, [deletedMessage])
   useEffect(() => {
     if (newChannel) {
-      setChannels(channels.concat(newChannel))
+      setChannels((prev) => prev.concat(newChannel))
       console.log('realTime channel added', newChannel)
     }
   }, [newChannel])
+  useEffect(() => {
+    if (deletedChannel?.id) {
+      setChannels((prev) => prev.filter((channel) => channel.id !== deletedChannel.id))
+      console.log('realTime channel deleted', deletedChannel)
+    }
+  }, [deletedChannel])
   useEffect(() => {
     if (newOrUpdatedUser) {
       users.set(newOrUpdatedUser.id, newOrUpdatedUser)
@@ -118,6 +125,8 @@ export const useStore = ({channelId}:Props) => {
     channels: channels !== null ? (
       channels.sort((a, b) => a.slug.localeCompare(b.slug))
     ) : [],
+    channelsLoaded,
+    refreshChannels: async() => fetchChannels(setChannels),
     users
   }
 }
@@ -202,14 +211,16 @@ export const addChannel = async(slug:string, user_id:string) => {
 
 export const deleteChannel = async(channel_id:number) => {
   try {
-    let {body} = await supabase
+    const {data, error} = await supabase
       .from('channels')
       .delete()
       .match({id: channel_id})
-    console.log('deleteChannel body', body)
-    return body
+    if (error) throw error
+    console.log('deleteChannel data', data)
+    return data
   } catch(error) {
     console.log('deleteChannel error', error)
+    throw error
   }
 }
 
@@ -235,5 +246,20 @@ export const deleteMessage = async(message_id:number) => {
     return body
   } catch(error) {
     console.log('deleteMessage error', error)
+  }
+}
+
+export const updateUsername = async(user_id: string, username: string) => {
+  try {
+    const trimmed = username.trim()
+    if (!trimmed) return null
+    let {body} = await supabase
+      .from('users')
+      .update({username: trimmed})
+      .match({id: user_id})
+    console.log('updateUsername body', body)
+    return body
+  } catch (error) {
+    console.log('updateUsername error', error)
   }
 }

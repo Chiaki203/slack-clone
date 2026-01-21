@@ -14,9 +14,11 @@ const ChannelPage = () => {
   const messagesEndRef = useRef<HTMLHRElement>(null)
   // console.log('messagesEndRef', messagesEndRef)
   const {id} = router.query
-  const channelId = Number(id)
+  const channelId = typeof id === 'string' ? Number(id) : Number.NaN
   // console.log('router.query', router.query)
-  const {messages, channels} = useStore({channelId})
+  const {messages, channels, channelsLoaded, refreshChannels} = useStore({
+    channelId: Number.isFinite(channelId) ? channelId : 0
+  })
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       block: 'start',
@@ -24,12 +26,18 @@ const ChannelPage = () => {
     })
   })
   useEffect(() => {
-    if (!channels.some(channel => channel.id === channelId)) {
-      router.push('/channels/1')
+    if (!router.isReady) return
+    if (!channelsLoaded) return
+    if (!Number.isFinite(channelId) || channelId <= 0) {
+      router.replace('/channels/1')
+      return
     }
-  }, [channels, channelId])
+    if (channels.length > 0 && !channels.some(channel => channel.id === channelId)) {
+      router.replace('/channels/1')
+    }
+  }, [router.isReady, channelsLoaded, channels, channelId])
   return (
-    <Layout channels={channels} activeChannelId={channelId}>
+    <Layout channels={channels} activeChannelId={channelId} refreshChannels={refreshChannels}>
       <div className='relative h-screen'>
         <div className='Messages h-full pb-16'>
           {/* <div>{user?.id}</div> */}

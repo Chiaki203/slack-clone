@@ -3,12 +3,13 @@ import { useContext, ReactNode } from 'react';
 import UserContext from '../lib/UserContext';
 import TrashIcon from './TrashIcon';
 import { Channel } from '../lib/models';
-import { addChannel, deleteChannel } from '../lib/Store';
+import { addChannel, deleteChannel, updateUsername } from '../lib/Store';
 import { User } from '@supabase/supabase-js';
 
 type LayoutProps = {
   channels: Channel[]
   activeChannelId: number
+  refreshChannels?: () => Promise<void>
   children: ReactNode
 }
 
@@ -17,11 +18,12 @@ type SidebarItemProps = {
   isActiveChannel: boolean
   user: User|null
   userRoles: ('admin'|'moderator')[]
+  refreshChannels?: () => Promise<void>
 }
 
 
 const Layout = (props:LayoutProps) => {
-  const {signOut, user, userRoles} = useContext(UserContext)
+  const {signOut, user, userRoles, profile, refreshProfile} = useContext(UserContext)
   const slugify = (text:string) => {
     return text
       .toString()
@@ -39,6 +41,16 @@ const Layout = (props:LayoutProps) => {
       addChannel(slugify(slug), user!.id)
     }
   }
+
+  const editUsername = async() => {
+    if (!user) return
+    const current = profile?.username ?? user.email ?? ''
+    const next = prompt('Enter a new username', current)
+    if (next === null) return
+    if (!next.trim() || next.trim() === current) return
+    await updateUsername(user.id, next)
+    await refreshProfile()
+  }
   return (
     <main className='main flex h-screen w-screen overflow-hidden'>
       <nav 
@@ -55,7 +67,19 @@ const Layout = (props:LayoutProps) => {
         </div>
         <hr className='m-2'/>
         <div className='p-2 flex flex-col space-y-2'>
-          <h6 className='text-xs'>{user?.email}</h6>
+          {/* <h6 className='text-xs'>{user?.email}</h6> */}
+          <div className='flex items-center justify-between'>
+            <span className='text-sm font-bold text-gray-300 truncate mr-2'>
+              {profile?.username ?? user?.email}
+            </span>
+            <button
+              className='text-xs underline opacity-80 hover:opacity-100'
+              onClick={editUsername}
+              type="button"
+            >
+              Edit username
+            </button>
+          </div>
           <button
             className='bg-blue-900 hover:bg-gray-800 text-white py-2 px-4 rounded w-full transition duration-150'
             onClick={signOut}>
@@ -72,6 +96,7 @@ const Layout = (props:LayoutProps) => {
               isActiveChannel={channel.id === props.activeChannelId}
               user={user}
               userRoles={userRoles}
+              refreshChannels={props.refreshChannels}
             />
           ))}
         </ul>
@@ -81,25 +106,38 @@ const Layout = (props:LayoutProps) => {
   )
 }
 
-const SidebarItem = ({channel, isActiveChannel, user, userRoles}:SidebarItemProps) => (
-  <>
-    <li className='flex items-center justify-between'>
-      <Link
-        // href={`/channels/${channel.id}`}
-        href="/channels/[id]"
-        as={`/channels/${channel.id}`}
-        >
-        <a className={isActiveChannel ? 'font-bold' : ''}>
-          {channel.slug}
-        </a>
-      </Link>
-      {channel.id !== 1 && (channel.created_by === user?.id || userRoles.includes('admin')) && (
-        <button onClick={() => deleteChannel(channel.id)}>
-          <TrashIcon/>
-        </button>
-      )}
-    </li>
-  </>
-)
+const SidebarItem = ({channel, isActiveChannel, user, userRoles, refreshChannels}:SidebarItemProps) => {
+  return (
+    <>
+      <li className='flex items-center justify-between'>
+        <Link
+          // href={`/channels/${channel.id}`}
+          href="/channels/[id]"
+          as={`/channels/${channel.id}`}
+          >
+          <a className={isActiveChannel ? 'font-bold' : ''}>
+            {channel.slug}
+          </a>
+        </Link>
+        {channel.id !== 1 && (channel.created_by === user?.id || userRoles.includes('admin')) && (
+          <button
+            type="button"
+            onClick={async() => {
+              const ok = confirm(`Delete #${channel.slug}?`)
+              if (!ok) return
+              try {
+                await deleteChannel(channel.id)
+                await refreshChannels?.()
+              } catch (error:any) {
+                alert(error?.message ?? String(error))
+              }
+            }}>
+            <TrashIcon/>
+          </button>
+        )}
+      </li>
+    </>
+  )
+}
 
 export default Layout
